@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
@@ -31,11 +32,9 @@ public class DishManager : MonoBehaviour
     //ordering
     public Button activeTitleButton;
     public Button nameButton;
-    [SerializeField] private bool isSortedAscending = true;
-    [SerializeField] private bool isSortedAlphabetically = true;
     //searching
     public TMP_InputField searchInputField;
-    private Coroutine searchCoroutine;
+    private Coroutine searchCoroutine; //add some delay
 
 
     void Start()
@@ -49,8 +48,17 @@ public class DishManager : MonoBehaviour
         //reordering
         activeTitleButton.onClick.AddListener(SortByActiveStatus);
         nameButton.onClick.AddListener(SortByAlpha);
+        currentNameSortState = AlphaSortState.Alpha;
         //searching
         searchInputField.onValueChanged.AddListener(delegate { StartDelayedSearch(); });
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            SceneManager.LoadScene("TVScene");
+        }
     }
 
     #region Creating/Loading/Deleting
@@ -208,6 +216,8 @@ public class DishManager : MonoBehaviour
             TMP_Dropdown categoryDropdown = dish.transform.GetChild(2).GetComponent<TMP_Dropdown>();
             TMP_InputField halfDoseField = dish.transform.GetChild(3).GetComponent<TMP_InputField>();
             TMP_InputField fullDoseField = dish.transform.GetChild(4).GetComponent<TMP_InputField>();
+            Toggle esgotadoToggle = dish.transform.GetChild(5).GetComponent<Toggle>();
+            Toggle ativoToggle = dish.transform.GetChild(6).GetComponent<Toggle>();
 
             // Update the dish list with the latest UI values
             Dish updatedDish = new Dish
@@ -216,6 +226,8 @@ public class DishManager : MonoBehaviour
                 categoria = categoryDropdown.options[categoryDropdown.value].text,
                 precoMeia = float.Parse(halfDoseField.text),
                 precoDose = float.Parse(fullDoseField.text),
+                Esgotado = esgotadoToggle.isOn,
+                isAtivo = ativoToggle.isOn
             };
             dishes.Add(updatedDish);
 
@@ -283,7 +295,6 @@ public class DishManager : MonoBehaviour
         // Refresh the UI to reflect the sorted order
         RefreshDishUI();
     }
-
     public void SearchDishes()
     {
         string query = searchInputField.text.ToLower().Trim(); // Get the search query and convert to lowercase
@@ -323,11 +334,6 @@ public class DishManager : MonoBehaviour
         // Execute the search
         SearchDishes();
     }
-
-
-
-
-
     private void RefreshDishUI()
     {
         // Clear the current UI objects
@@ -343,7 +349,6 @@ public class DishManager : MonoBehaviour
             InstantiateDishUI(dish);
         }
     }
-
 
     #endregion
 
