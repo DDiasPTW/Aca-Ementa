@@ -36,7 +36,6 @@ public class DishManager : MonoBehaviour
     public TMP_InputField searchInputField;
     private Coroutine searchCoroutine; //add some delay
 
-
     void Start()
     {
         dataPath = Application.persistentDataPath + "/Pratos.txt";
@@ -52,7 +51,6 @@ public class DishManager : MonoBehaviour
         //searching
         searchInputField.onValueChanged.AddListener(delegate { StartDelayedSearch(); });
     }
-
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.LeftShift))
@@ -131,12 +129,25 @@ public class DishManager : MonoBehaviour
         {
             dish.Esgotado = isOn;
             SaveDishesToFile(); // Save immediately after change
+
+            Server server = gameObject.GetComponent<Server>();
+            if (server != null)
+            {
+                //server.SendDishStatus(dish);  // Send the updated dish status to all connected clients
+            }
         });
+
 
         ativoToggle.onValueChanged.AddListener((isOn) =>
         {
             dish.isAtivo = isOn;
             SaveDishesToFile(); // Save immediately after change
+
+            Server server = gameObject.GetComponent<Server>();
+            if (server != null)
+            {
+                server.SendActiveDishes();  // Send the updated list of active dishes to all connected clients
+            }
         });
 
 

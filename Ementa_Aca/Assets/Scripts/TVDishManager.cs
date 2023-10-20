@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -21,9 +22,18 @@ public class TVDishManager : MonoBehaviour
 
     void Start()
     {
-        dataPath = Application.persistentDataPath + "/Pratos.txt";
-        LoadDishesFromFile();
-        DisplayDishes();
+        //dataPath = Application.persistentDataPath + "/Pratos.txt";
+        //LoadDishesFromFile();
+        //DisplayDishes(dishes);
+        Debug.Log("TVDishManager Start method called");
+        // Test data
+        //List<Dish> testDishes = new List<Dish>
+        //{
+        //    new Dish { nome = "Test Dish", categoria = "Outro", precoMeia = 1.0f, precoDose = 2.0f, Esgotado = false, isAtivo = true }
+        //};
+
+        //// Update the UI with test data
+        //UpdateUI(testDishes);
     }
 
     private void Update()
@@ -44,15 +54,42 @@ public class TVDishManager : MonoBehaviour
         }
     }
 
-    private void DisplayDishes()
+    private void DisplayDishes(List<Dish> dishes)
     {
+        Debug.Log("DisplayDishes called with " + dishes.Count + " dishes");
+        // Clear the current display
+        foreach (Transform child in outrosLayout)
+        {
+            Destroy(child.gameObject);
+        }
+        foreach (Transform child in peixeLayout)
+        {
+            Destroy(child.gameObject);
+        }
+        foreach (Transform child in carneLayout)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Display the dishes in the respective layout groups
         foreach (Dish dish in dishes)
         {
+            Debug.Log("Displaying dish: " + dish.nome + ", isAtivo: " + dish.isAtivo);
             if (dish.isAtivo)
             {
                 InstantiateDishUI(dish);
             }
         }
+    }
+
+    public void UpdateUI(List<Dish> activeDishes)
+    {
+        Debug.Log("UpdateUI called with " + activeDishes.Count + " active dishes");
+        // Update the list of dishes
+        dishes = activeDishes;
+
+        // Display the dishes
+        DisplayDishes(dishes);
     }
 
     private void InstantiateDishUI(Dish dish)
@@ -79,7 +116,6 @@ public class TVDishManager : MonoBehaviour
         Transform parentLayout = GetParentLayout(dish.categoria);
         newDishUI.transform.SetParent(parentLayout, false);
     }
-
 
     private Transform GetParentLayout(string categoria)
     {

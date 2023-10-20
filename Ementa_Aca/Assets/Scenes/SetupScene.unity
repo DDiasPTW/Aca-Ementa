@@ -4681,6 +4681,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1940067629}
   - component: {fileID: 1940067630}
+  - component: {fileID: 1940067631}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -4726,9 +4727,19 @@ MonoBehaviour:
   saveButton: {fileID: 889296306}
   activeTitleButton: {fileID: 1274979730}
   nameButton: {fileID: 1095701520}
-  isSortedAscending: 1
-  isSortedAlphabetically: 1
   searchInputField: {fileID: 572392862}
+--- !u!114 &1940067631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1940067628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d47920497a0b76b4b9bb09d7d606ea63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1940804369
 GameObject:
   m_ObjectHideFlags: 0
