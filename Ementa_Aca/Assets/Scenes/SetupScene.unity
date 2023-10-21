@@ -2073,19 +2073,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 989428202}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1940067630}
-        m_TargetAssemblyTypeName: DishManager, Assembly-CSharp
-        m_MethodName: CreateDish
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &989428202
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4723,6 +4711,7 @@ MonoBehaviour:
   categoryDropdown: {fileID: 1171059006}
   dishPrefab: {fileID: 6704007171895060806, guid: eb1a800ee4cef4e4b80447c733ad2aec, type: 3}
   dishesContainer: {fileID: 1202760891}
+  createButton: {fileID: 989428201}
   editButton: {fileID: 141197741}
   saveButton: {fileID: 889296306}
   activeTitleButton: {fileID: 1274979730}

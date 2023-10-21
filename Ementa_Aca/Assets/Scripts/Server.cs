@@ -11,6 +11,7 @@ public class Server : MonoBehaviour
     private TcpListener tcpListener;
     private List<TcpClient> clients = new List<TcpClient>();
     private string dataPath;
+    private DishManager dM;
 
     void Start()
     {
@@ -19,14 +20,17 @@ public class Server : MonoBehaviour
         tcpListener.Start();
         Debug.Log("Server started on " + IPAddress.Any + ":12345");
         tcpListener.BeginAcceptTcpClient(new AsyncCallback(OnClientConnect), null);
+        dM = gameObject.GetComponent<DishManager>();
     }
 
     private void OnClientConnect(IAsyncResult ar)
     {
         TcpClient tcpClient = tcpListener.EndAcceptTcpClient(ar);
         Debug.Log("Client connected");
-
+        //dM.editButton.interactable = false;
         clients.Add(tcpClient);
+
+        dM.SaveDishesToFile();
 
         // Load dishes from file
         List<Dish> dishes = LoadDishesFromFile();

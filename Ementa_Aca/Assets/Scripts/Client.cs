@@ -11,7 +11,7 @@ public class Client : MonoBehaviour
 
     void Start()
     {
-        tcpClient = new TcpClient(/*NetworkUtils.GetLocalIPAddress()*/"127.0.0.1", 12345);
+        tcpClient = new TcpClient(NetworkUtils.GetLocalIPAddress(), 12345); //"127.0.0.1"
         Debug.Log("Connected to server");
         BeginRead();
     }
@@ -24,11 +24,11 @@ public class Client : MonoBehaviour
 
     private void OnRead(IAsyncResult ar)
     {
-        Debug.Log("OnRead called");
+        //Debug.Log("OnRead called");
         byte[] buffer = (byte[])ar.AsyncState;
         int bytesRead = tcpClient.GetStream().EndRead(ar);
         string data = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-        Debug.Log("Received data: " + data);
+        //Debug.Log("Received data: " + data);
 
         // Deserialize the received data to get the list of active dishes
         try
@@ -40,7 +40,7 @@ public class Client : MonoBehaviour
                 TVDishManager tvDishManager = gameObject.GetComponent<TVDishManager>();
                 if (tvDishManager != null)
                 {
-                    Debug.Log("TVDishManager instance found");
+                    //Debug.Log("TVDishManager instance found");
                     Debug.Log("Calling UpdateUI with " + activeDishes.dishes.Count + " active dishes");
                     tvDishManager.UpdateUI(activeDishes.dishes);
                 }

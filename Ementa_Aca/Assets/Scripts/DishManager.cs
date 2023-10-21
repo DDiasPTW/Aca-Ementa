@@ -3,25 +3,24 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
 public class DishManager : MonoBehaviour
 {
     [Header("UI References")]
-    public GameObject addDishPanel;  // Reference to the "Add Dish" panel
+    public GameObject addDishPanel; 
     public TMP_InputField dishNameInput;
     public TMP_InputField halfDosePriceInput;
     public TMP_InputField fullDosePriceInput;
     public TMP_Dropdown categoryDropdown;
-    public GameObject dishPrefab;  // Your "Prato" prefab
-    public Transform dishesContainer;  // This should be the transform of your Vertical Layout object
+    public GameObject dishPrefab; 
+    public Transform dishesContainer;  
     private List<GameObject> dishUIObjects = new List<GameObject>();
-
+    public Button createButton;
     [Header("Editing References")]
-    public Button editButton;  // Assign this in the Unity Inspector to your "Editar" button
-    public Button saveButton;  // Assign this in the Unity Inspector to your "Save" button
+    public Button editButton; 
+    public Button saveButton;  
     private bool isInEditMode = false;
     private List<Dish> dishes = new List<Dish>();
 
@@ -40,6 +39,7 @@ public class DishManager : MonoBehaviour
     {
         dataPath = Application.persistentDataPath + "/Pratos.txt";
         LoadDishesFromFile();
+        createButton.onClick.AddListener(CreateDish);
         //editing and saving
         editButton.onClick.AddListener(ToggleEditMode);
         saveButton.onClick.AddListener(SaveChanges);
@@ -51,13 +51,6 @@ public class DishManager : MonoBehaviour
         //searching
         searchInputField.onValueChanged.AddListener(delegate { StartDelayedSearch(); });
     }
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.LeftShift))
-        {
-            SceneManager.LoadScene("TVScene");
-        }
-    }
 
     #region Creating/Loading/Deleting
     public void ToggleAddDishPanel()
@@ -67,12 +60,24 @@ public class DishManager : MonoBehaviour
     }
     public void CreateDish()
     {
+        // Check if the dish name is empty
+        if (string.IsNullOrWhiteSpace(dishNameInput.text))
+        {
+            Debug.LogError("Dish name cannot be empty!");
+        }
+
+        // Try to parse the half dose price
+        float.TryParse(halfDosePriceInput.text, out float halfDosePrice);
+
+        // Try to parse the full dose price
+        float.TryParse(fullDosePriceInput.text, out float fullDosePrice);
+
         Dish newDish = new Dish
         {
         nome = dishNameInput.text,
         categoria = categoryDropdown.options[categoryDropdown.value].text,
-        precoMeia = float.Parse(halfDosePriceInput.text),
-        precoDose = float.Parse(fullDosePriceInput.text),
+        precoMeia = halfDosePrice,
+        precoDose = fullDosePrice,
         Esgotado = false,
         isAtivo = false
         };
@@ -102,6 +107,14 @@ public class DishManager : MonoBehaviour
             string json = File.ReadAllText(path);
             SerializableDishList loadedDishes = JsonUtility.FromJson<SerializableDishList>(json);
             dishes = loadedDishes.dishes;
+
+            // Clear the old UI elements
+            foreach (var dishUI in dishUIObjects)
+            {
+                Destroy(dishUI);
+            }
+            dishUIObjects.Clear();
+
 
             foreach (Dish dish in loadedDishes.dishes)
             {
@@ -133,7 +146,7 @@ public class DishManager : MonoBehaviour
             Server server = gameObject.GetComponent<Server>();
             if (server != null)
             {
-                //server.SendDishStatus(dish);  // Send the updated dish status to all connected clients
+                server.SendActiveDishes();  // Send the updated dish status to all connected clients
             }
         });
 
@@ -252,6 +265,14 @@ public class DishManager : MonoBehaviour
         // Save the updated dishes to a file
         SaveDishesToFile();
 
+        // Load the updated dishes from the file
+        LoadDishesFromFile();
+
+        Server server = gameObject.GetComponent<Server>();
+        if (server != null)
+        {
+            server.SendActiveDishes();  // Send the updated dish status to all connected clients
+        }
         saveButton.gameObject.SetActive(false);
     }
     #endregion
