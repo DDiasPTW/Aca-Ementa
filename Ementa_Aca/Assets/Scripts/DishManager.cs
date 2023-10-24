@@ -5,8 +5,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Photon.Pun;
 
-public class DishManager : MonoBehaviour
+public class DishManager : MonoBehaviourPunCallbacks
 {
     [Header("UI References")]
     public GameObject addDishPanel; 
@@ -92,12 +93,37 @@ public class DishManager : MonoBehaviour
         halfDosePriceInput.text = "";
         fullDosePriceInput.text = "";
     }
+
     public void SaveDishesToFile()
     {
-        string path = Application.persistentDataPath + "/Pratos.txt";
-        string json = JsonUtility.ToJson(new SerializableDishList { dishes = dishes }, true); // Convert the list of dishes to JSON
-        File.WriteAllText(path, json); // Write the JSON to the file
+        //string path = Application.persistentDataPath + "/Pratos.txt";
+        string json = JsonUtility.ToJson(new SerializableDishList { dishes = dishes }, true);
+        File.WriteAllText(dataPath, json);
+
+        // Send the updated dishes to all clients
+        photonView.RPC("UpdateDishes", RpcTarget.Others, json);
     }
+
+    [PunRPC]
+    public void UpdateDishes(string json)
+    {
+        SerializableDishList loadedDishes = JsonUtility.FromJson<SerializableDishList>(json);
+        dishes = loadedDishes.dishes;
+
+        // Clear the old UI elements
+        foreach (var dishUI in dishUIObjects)
+        {
+            Destroy(dishUI);
+        }
+        dishUIObjects.Clear();
+
+        // Instantiate the UI elements for the updated dishes
+        foreach (Dish dish in dishes)
+        {
+            InstantiateDishUI(dish);
+        }
+    }
+
     public void LoadDishesFromFile()
     {
         string path = Application.persistentDataPath + "/Pratos.txt";
@@ -143,7 +169,7 @@ public class DishManager : MonoBehaviour
             dish.Esgotado = isOn;
             SaveDishesToFile(); // Save immediately after change
 
-            Server server = gameObject.GetComponent<Server>();
+            ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
             if (server != null)
             {
                 server.SendActiveDishes();  // Send the updated dish status to all connected clients
@@ -156,7 +182,7 @@ public class DishManager : MonoBehaviour
             dish.isAtivo = isOn;
             SaveDishesToFile(); // Save immediately after change
 
-            Server server = gameObject.GetComponent<Server>();
+            ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
             if (server != null)
             {
                 server.SendActiveDishes();  // Send the updated list of active dishes to all connected clients
@@ -268,7 +294,7 @@ public class DishManager : MonoBehaviour
         // Load the updated dishes from the file
         LoadDishesFromFile();
 
-        Server server = gameObject.GetComponent<Server>();
+        ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
         if (server != null)
         {
             server.SendActiveDishes();  // Send the updated dish status to all connected clients

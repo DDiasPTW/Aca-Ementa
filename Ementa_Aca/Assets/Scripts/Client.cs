@@ -8,13 +8,56 @@ using UnityEngine;
 public class Client : MonoBehaviour
 {
     private TcpClient tcpClient;
-
+    private UdpClient udpClient;
+    private string serverIPAddress;
     void Start()
     {
-        tcpClient = new TcpClient(NetworkUtils.GetLocalIPAddress(), 12345); //"127.0.0.1"
-        Debug.Log("Connected to server");
-        BeginRead();
+        // Start UDP client for network discovery
+        udpClient = new UdpClient();
+        udpClient.EnableBroadcast = true;
+
+        // Send broadcast message to discover server
+        byte[] request = Encoding.ASCII.GetBytes("DISCOVER_SERVER_REQUEST");
+        udpClient.Send(request, request.Length, new IPEndPoint(IPAddress.Broadcast, 12345));
+
+        // Listen for responses
+        udpClient.BeginReceive(OnBroadcastReceived, null);
+        IPEndPoint remoteEP = null;
+        ConnectToServer(remoteEP.Address.ToString());
     }
+
+    private void OnBroadcastReceived(IAsyncResult ar)
+    {
+        IPEndPoint remoteEP = null;
+        byte[] response = udpClient.EndReceive(ar, ref remoteEP);
+
+        string message = Encoding.ASCII.GetString(response);
+        if (message == "DISCOVER_SERVER_RESPONSE")
+        {
+            // Connect to server using the IP address of the first server that responds
+            ConnectToServer(remoteEP.Address.ToString());
+        }
+    }
+
+    private void ConnectToServer(string ipAddress)
+    {
+        try
+        {
+            tcpClient = new TcpClient(ipAddress, 12345);
+            Debug.Log("Connected to server");
+            BeginRead();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Failed to connect to server: " + e.Message);
+            // Retry connecting after 1 second
+            Invoke("ConnectToServer", 1f);
+        }
+    }
+
+
+
+
 
     private void BeginRead()
     {

@@ -5,22 +5,54 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
+using Photon.Pun;
+using Photon.Realtime;
 
 public class Server : MonoBehaviour
 {
     private TcpListener tcpListener;
+    private UdpClient udpServer;
     private List<TcpClient> clients = new List<TcpClient>();
     private string dataPath;
     private DishManager dM;
 
+
     void Start()
     {
         dataPath = Application.persistentDataPath + "/Pratos.txt";
+        // Start TCP server
         tcpListener = new TcpListener(IPAddress.Any, 12345);
         tcpListener.Start();
-        Debug.Log("Server started on " + IPAddress.Any + ":12345");
+        Debug.Log("Server started on " + NetworkUtils.GetLocalIPAddress() + ":12345");
+
+        // Start listening for client connections
         tcpListener.BeginAcceptTcpClient(new AsyncCallback(OnClientConnect), null);
-        dM = gameObject.GetComponent<DishManager>();
+
+        // Start UDP server for network discovery
+        udpServer = new UdpClient(12345);
+        StartListeningForBroadcasts();
+    }
+
+
+
+    private void StartListeningForBroadcasts()
+    {
+        udpServer.BeginReceive(OnBroadcastReceived, null);
+    }
+
+    private void OnBroadcastReceived(IAsyncResult ar)
+    {
+        IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+        byte[] data = udpServer.EndReceive(ar, ref remoteEP);
+        string message = Encoding.ASCII.GetString(data);
+        if (message == "DISCOVER_SERVER_REQUEST")
+        {
+            byte[] response = Encoding.ASCII.GetBytes("DISCOVER_SERVER_RESPONSE");
+            udpServer.Send(response, response.Length, remoteEP);
+        }
+
+        // Continue listening for broadcasts
+        StartListeningForBroadcasts();
     }
 
     private void OnClientConnect(IAsyncResult ar)
@@ -44,6 +76,9 @@ public class Server : MonoBehaviour
 
         // Send the JSON string to the client
         SendData(json, tcpClient);
+
+        SendActiveDishes();
+
         // Start listening for the next client
         tcpListener.BeginAcceptTcpClient(new AsyncCallback(OnClientConnect), null);
     }
@@ -80,8 +115,9 @@ public class Server : MonoBehaviour
 
         Debug.Log("Sending data: " + json);
         // Send the JSON string to all connected clients
-        foreach (TcpClient client in clients)
+        for (int i = clients.Count - 1; i >= 0; i--)
         {
+            TcpClient client = clients[i];
             try
             {
                 SendData(json, client);
@@ -89,11 +125,13 @@ public class Server : MonoBehaviour
             catch (Exception e)
             {
                 Debug.LogError("Error sending data to client: " + e.Message);
+                // Remove the client from the list
+                clients.RemoveAt(i);
+                // Close the client connection
+                client.Close();
             }
         }
     }
-
-
     void OnDestroy()
     {
         tcpListener.Stop();

@@ -3,8 +3,9 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using Photon.Pun;
 
-public class TVDishManager : MonoBehaviour
+public class TVDishManager : MonoBehaviourPunCallbacks
 {
     [Header("Layout References")]
     public Transform outrosLayout;
@@ -34,6 +35,17 @@ public class TVDishManager : MonoBehaviour
     //    }
     //}
 
+    [PunRPC]
+    public void UpdateUI(List<Dish> activeDishes)
+    {
+        Debug.Log("UpdateUI called with " + activeDishes.Count + " active dishes");
+        // Update the list of dishes
+        dishes = activeDishes;
+
+        // Display the dishes
+        DisplayDishes(dishes);
+    }
+
     private void DisplayDishes(List<Dish> dishes)
     {
         Debug.Log("DisplayDishes called with " + dishes.Count + " dishes");
@@ -60,16 +72,6 @@ public class TVDishManager : MonoBehaviour
                 InstantiateDishUI(dish);
             }
         }
-    }
-
-    public void UpdateUI(List<Dish> activeDishes)
-    {
-        Debug.Log("UpdateUI called with " + activeDishes.Count + " active dishes");
-        // Update the list of dishes
-        dishes = activeDishes;
-
-        // Display the dishes
-        DisplayDishes(dishes);
     }
 
     private void InstantiateDishUI(Dish dish)
