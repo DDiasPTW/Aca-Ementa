@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 
@@ -20,20 +21,12 @@ public class TVDishManager : MonoBehaviourPunCallbacks
 
     private List<Dish> dishes = new List<Dish>();
 
+    public Color novidadeColor;
+
     void Start()
     {
         Debug.Log("TVDishManager Start method called");
     }
-
-    //private void LoadDishesFromFile()
-    //{
-    //    if (System.IO.File.Exists(dataPath))
-    //    {
-    //        string json = System.IO.File.ReadAllText(dataPath);
-    //        SerializableDishList loadedDishes = JsonUtility.FromJson<SerializableDishList>(json);
-    //        dishes = loadedDishes.dishes;
-    //    }
-    //}
 
     [PunRPC]
     public void UpdateUI(List<Dish> activeDishes)
@@ -80,10 +73,12 @@ public class TVDishManager : MonoBehaviourPunCallbacks
         TMP_Text nameText = newDishUI.transform.GetChild(1).GetComponent<TMP_Text>();
         TMP_Text halfPriceText = newDishUI.transform.GetChild(2).GetComponent<TMP_Text>();
         TMP_Text fullPriceText = newDishUI.transform.GetChild(3).GetComponent<TMP_Text>();
+        Image naHoraImage = newDishUI.transform.GetChild(4).GetComponent<Image>(); 
 
         nameText.text = dish.nome.ToUpper();
         halfPriceText.text = dish.precoMeia == 0 ? "" : dish.precoMeia.ToString("F2");
         fullPriceText.text = dish.precoDose == 0 ? "" : dish.precoDose.ToString("F2");
+        naHoraImage.enabled = dish.naHora;
 
         if (dish.Esgotado)
         {
@@ -93,6 +88,12 @@ public class TVDishManager : MonoBehaviourPunCallbacks
             halfPriceText.fontStyle = TMPro.FontStyles.Strikethrough;
             fullPriceText.color = Color.gray;
             fullPriceText.fontStyle = TMPro.FontStyles.Strikethrough;
+        }
+        else if (dish.novidade)
+        {
+            nameText.color = novidadeColor;
+            halfPriceText.color = novidadeColor;
+            fullPriceText.color = novidadeColor;
         }
 
         Transform parentLayout = GetParentLayout(dish.categoria);

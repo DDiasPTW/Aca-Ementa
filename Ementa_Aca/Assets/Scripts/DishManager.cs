@@ -35,6 +35,7 @@ public class DishManager : MonoBehaviourPunCallbacks
     //searching
     public TMP_InputField searchInputField;
     private Coroutine searchCoroutine; //add some delay
+    private string currentSearchQuery = "";
 
     void Start()
     {
@@ -65,6 +66,7 @@ public class DishManager : MonoBehaviourPunCallbacks
         if (string.IsNullOrWhiteSpace(dishNameInput.text))
         {
             Debug.LogError("Dish name cannot be empty!");
+            return;
         }
 
         // Try to parse the half dose price
@@ -80,7 +82,9 @@ public class DishManager : MonoBehaviourPunCallbacks
         precoMeia = halfDosePrice,
         precoDose = fullDosePrice,
         Esgotado = false,
-        isAtivo = false
+        isAtivo = false,
+        novidade = false,
+        naHora = false
         };
         dishes.Add(newDish);
 
@@ -160,9 +164,38 @@ public class DishManager : MonoBehaviourPunCallbacks
         TMP_Dropdown categoryDropdown = newDishUI.transform.GetChild(2).GetComponent<TMP_Dropdown>();
         TMP_InputField halfDoseField = newDishUI.transform.GetChild(3).GetComponent<TMP_InputField>();
         TMP_InputField fullDoseField = newDishUI.transform.GetChild(4).GetComponent<TMP_InputField>();
-        Toggle soldOutToggle = newDishUI.transform.GetChild(5).GetComponent<Toggle>();
-        Toggle ativoToggle = newDishUI.transform.GetChild(6).GetComponent<Toggle>();
-        Button deleteButton = newDishUI.transform.GetChild(7).GetComponent<Button>();
+        Toggle naHoraToggle = newDishUI.transform.GetChild(5).GetComponent<Toggle>();
+        Toggle novidadeToggle = newDishUI.transform.GetChild(6).GetComponent<Toggle>();
+        Toggle soldOutToggle = newDishUI.transform.GetChild(7).GetComponent<Toggle>();
+        Toggle ativoToggle = newDishUI.transform.GetChild(8).GetComponent<Toggle>();
+        Button deleteButton = newDishUI.transform.GetChild(9).GetComponent<Button>();
+
+        #region Toggles
+        naHoraToggle.onValueChanged.AddListener((isOn) =>
+        {
+            dish.naHora = isOn;
+            SaveDishesToFile(); // Save immediately after change
+
+            ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
+            if (server != null)
+            {
+                server.SendActiveDishes();  // Send the updated dish status to all connected clients
+            }
+        });
+
+
+        novidadeToggle.onValueChanged.AddListener((isOn) =>
+        {
+            dish.novidade = isOn;
+            SaveDishesToFile(); // Save immediately after change
+
+            ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
+            if (server != null)
+            {
+                server.SendActiveDishes();  // Send the updated dish status to all connected clients
+            }
+        });
+
 
         soldOutToggle.onValueChanged.AddListener((isOn) =>
         {
@@ -188,6 +221,7 @@ public class DishManager : MonoBehaviourPunCallbacks
                 server.SendActiveDishes();  // Send the updated list of active dishes to all connected clients
             }
         });
+        #endregion
 
 
         // Populate the UI with the dish data
@@ -195,6 +229,8 @@ public class DishManager : MonoBehaviourPunCallbacks
         categoryDropdown.value = categoryDropdown.options.FindIndex(option => option.text == dish.categoria); 
         halfDoseField.text = dish.precoMeia.ToString();
         fullDoseField.text = dish.precoDose.ToString();
+        naHoraToggle.isOn = dish.naHora;
+        novidadeToggle.isOn = dish.novidade;
         soldOutToggle.isOn = dish.Esgotado;
         ativoToggle.isOn = dish.isAtivo;
 
@@ -214,10 +250,14 @@ public class DishManager : MonoBehaviourPunCallbacks
     {
         int indexToRemove = dishUIObjects.IndexOf(dish);
 
-        Toggle soldOutToggle = dish.transform.GetChild(5).GetComponent<Toggle>();
-        Toggle ativoToggle = dish.transform.GetChild(6).GetComponent<Toggle>();
+        Toggle naHoraToggle = dish.transform.GetChild(5).GetComponent<Toggle>();
+        Toggle novidadeToggle = dish.transform.GetChild(6).GetComponent<Toggle>();
+        Toggle soldOutToggle = dish.transform.GetChild(7).GetComponent<Toggle>();
+        Toggle ativoToggle = dish.transform.GetChild(8).GetComponent<Toggle>();
 
         // Remove listeners
+        naHoraToggle.onValueChanged.RemoveAllListeners();
+        novidadeToggle.onValueChanged.RemoveAllListeners();
         soldOutToggle.onValueChanged.RemoveAllListeners();
         ativoToggle.onValueChanged.RemoveAllListeners();
 
@@ -258,48 +298,57 @@ public class DishManager : MonoBehaviourPunCallbacks
     {
         isInEditMode = false;
 
-        dishes.Clear(); // Clear the current list of dishes
-
-        foreach (GameObject dish in dishUIObjects)
+        // Update each dish in the dishes list based on the UI
+        for (int i = 0; i < dishUIObjects.Count; i++)
         {
-            TMP_InputField nameField = dish.transform.GetChild(1).GetComponent<TMP_InputField>();
-            TMP_Dropdown categoryDropdown = dish.transform.GetChild(2).GetComponent<TMP_Dropdown>();
-            TMP_InputField halfDoseField = dish.transform.GetChild(3).GetComponent<TMP_InputField>();
-            TMP_InputField fullDoseField = dish.transform.GetChild(4).GetComponent<TMP_InputField>();
-            Toggle esgotadoToggle = dish.transform.GetChild(5).GetComponent<Toggle>();
-            Toggle ativoToggle = dish.transform.GetChild(6).GetComponent<Toggle>();
+            GameObject dishUI = dishUIObjects[i];
+            Dish updatedDish = GetDishFromUI(dishUI);
 
-            // Update the dish list with the latest UI values
-            Dish updatedDish = new Dish
+            if (i < dishes.Count)
             {
-                nome = nameField.text,
-                categoria = categoryDropdown.options[categoryDropdown.value].text,
-                precoMeia = float.Parse(halfDoseField.text),
-                precoDose = float.Parse(fullDoseField.text),
-                Esgotado = esgotadoToggle.isOn,
-                isAtivo = ativoToggle.isOn
-            };
-            dishes.Add(updatedDish);
-
-            // Make input fields non-interactable after saving
-            nameField.interactable = isInEditMode;
-            categoryDropdown.interactable = isInEditMode;
-            halfDoseField.interactable = isInEditMode;
-            fullDoseField.interactable = isInEditMode;
+                dishes[i] = updatedDish; // Update the dish in the list
+            }
         }
 
         // Save the updated dishes to a file
         SaveDishesToFile();
 
-        // Load the updated dishes from the file
-        LoadDishesFromFile();
-
-        ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
-        if (server != null)
+        // Reapply the search filter or refresh the UI
+        if (!string.IsNullOrEmpty(currentSearchQuery))
         {
-            server.SendActiveDishes();  // Send the updated dish status to all connected clients
+            SearchDishes();
         }
+        else
+        {
+            RefreshDishUI();
+        }
+
         saveButton.gameObject.SetActive(false);
+    }
+
+    private Dish GetDishFromUI(GameObject dishUI)
+    {
+        // Extract dish information from the UI elements and return a new Dish object
+        TMP_InputField nameField = dishUI.transform.GetChild(1).GetComponent<TMP_InputField>();
+        TMP_Dropdown categoryDropdown = dishUI.transform.GetChild(2).GetComponent<TMP_Dropdown>();
+        TMP_InputField halfDoseField = dishUI.transform.GetChild(3).GetComponent<TMP_InputField>();
+        TMP_InputField fullDoseField = dishUI.transform.GetChild(4).GetComponent<TMP_InputField>();
+        Toggle naHoraToggle = dishUI.transform.GetChild(5).GetComponent<Toggle>();
+        Toggle novidadeToggle = dishUI.transform.GetChild(6).GetComponent<Toggle>();
+        Toggle esgotadoToggle = dishUI.transform.GetChild(7).GetComponent<Toggle>();
+        Toggle ativoToggle = dishUI.transform.GetChild(8).GetComponent<Toggle>();
+
+        return new Dish
+        {
+            nome = nameField.text,
+            categoria = categoryDropdown.options[categoryDropdown.value].text,
+            precoMeia = float.Parse(halfDoseField.text),
+            precoDose = float.Parse(fullDoseField.text),
+            Esgotado = esgotadoToggle.isOn,
+            isAtivo = ativoToggle.isOn,
+            novidade = novidadeToggle.isOn,
+            naHora = naHoraToggle.isOn
+        };
     }
     #endregion
 
@@ -353,26 +402,40 @@ public class DishManager : MonoBehaviourPunCallbacks
         // Refresh the UI to reflect the sorted order
         RefreshDishUI();
     }
+    //public void SearchDishes()
+    //{
+    //    string query = searchInputField.text.ToLower().Trim(); // Get the search query and convert to lowercase
+    //    currentSearchQuery = searchInputField.text.ToLower().Trim();
+    //    // Filter the dishes based on the search query
+    //    List<Dish> filteredDishes = dishes.Where(dish => dish.nome.ToLower().Contains(query)).ToList();
+
+    //    // Clear the current UI objects
+    //    foreach (var dishUI in dishUIObjects)
+    //    {
+    //        Destroy(dishUI);
+    //    }
+    //    dishUIObjects.Clear();
+
+    //    // Display only the filtered dishes
+    //    foreach (var dish in filteredDishes)
+    //    {
+    //        InstantiateDishUI(dish);
+    //    }
+    //}
+
     public void SearchDishes()
     {
-        string query = searchInputField.text.ToLower().Trim(); // Get the search query and convert to lowercase
+        string query = searchInputField.text.ToLower().Trim();
+        currentSearchQuery = query;
 
         // Filter the dishes based on the search query
         List<Dish> filteredDishes = dishes.Where(dish => dish.nome.ToLower().Contains(query)).ToList();
 
-        // Clear the current UI objects
-        foreach (var dishUI in dishUIObjects)
-        {
-            Destroy(dishUI);
-        }
-        dishUIObjects.Clear();
-
-        // Display only the filtered dishes
-        foreach (var dish in filteredDishes)
-        {
-            InstantiateDishUI(dish);
-        }
+        // Refresh the UI with filtered dishes
+        RefreshDishUI(filteredDishes);
     }
+
+
     private void StartDelayedSearch()
     {
         // If there's an ongoing search coroutine, stop it
@@ -408,6 +471,22 @@ public class DishManager : MonoBehaviourPunCallbacks
         }
     }
 
+    private void RefreshDishUI(List<Dish> filteredDishes)
+    {
+        // Clear the current UI objects
+        foreach (var dishUI in dishUIObjects)
+        {
+            Destroy(dishUI);
+        }
+        dishUIObjects.Clear();
+
+        // Re-instantiate the UI objects based on the filtered dishes list
+        foreach (var dish in filteredDishes)
+        {
+            InstantiateDishUI(dish);
+        }
+    }
+
     #endregion
 
 }
@@ -421,11 +500,8 @@ public class Dish
     public float precoDose;
     public bool Esgotado;
     public bool isAtivo;
-
-    //!Adicionar depois?
-    //public bool novidade = false;
-    //public bool popular = false;
-    //public bool promo = false;
+    public bool novidade = false;
+    public bool naHora = false;
 }
 
 [System.Serializable]

@@ -20,6 +20,7 @@ public class ServerPhoton : MonoBehaviourPunCallbacks
         RoomOptions roomOptions = new RoomOptions();
         roomOptions.MaxPlayers = 20;
         PhotonNetwork.JoinOrCreateRoom("MainRoom", roomOptions, TypedLobby.Default);
+        //PhotonNetwork.JoinOrCreateRoom("TESTRoom", roomOptions, TypedLobby.Default);
     }
 
     public override void OnJoinedRoom()
