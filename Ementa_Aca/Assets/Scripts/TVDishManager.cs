@@ -15,7 +15,7 @@ public class TVDishManager : MonoBehaviourPunCallbacks
 
     [Header("Prefab Reference")]
     public GameObject dishTVPrefab;
-
+    public GameObject Layouts;
     [Header("Data File Path")]
     private string dataPath;
 
@@ -45,7 +45,11 @@ public class TVDishManager : MonoBehaviourPunCallbacks
         // Clear the current display
         foreach (Transform child in outrosLayout)
         {
-            Destroy(child.gameObject);
+            if (child.gameObject != Layouts)
+            {
+                Destroy(child.gameObject);
+            }
+            
         }
         foreach (Transform child in peixeLayout)
         {
@@ -70,10 +74,28 @@ public class TVDishManager : MonoBehaviourPunCallbacks
     private void InstantiateDishUI(Dish dish)
     {
         GameObject newDishUI = Instantiate(dishTVPrefab);
+
         TMP_Text nameText = newDishUI.transform.GetChild(1).GetComponent<TMP_Text>();
         TMP_Text halfPriceText = newDishUI.transform.GetChild(2).GetComponent<TMP_Text>();
         TMP_Text fullPriceText = newDishUI.transform.GetChild(3).GetComponent<TMP_Text>();
         Image naHoraImage = newDishUI.transform.GetChild(4).GetComponent<Image>(); 
+
+        Transform parentLayout = GetParentLayout(dish.categoria);
+
+        // Check if the parent layout is 'outrosLayout' and it has at least one child
+        if (parentLayout == outrosLayout && outrosLayout.childCount > 0)
+        {
+            // Insert the new dish UI before the last child in 'outrosLayout'
+            int lastChildIndex = outrosLayout.childCount - 1;
+            newDishUI.transform.SetParent(outrosLayout, false);
+            newDishUI.transform.SetSiblingIndex(lastChildIndex);
+        }
+        else
+        {
+            // For other categories, just set the parent normally
+            newDishUI.transform.SetParent(parentLayout, false);
+        }
+
 
         nameText.text = dish.nome.ToUpper();
         halfPriceText.text = dish.precoMeia == 0 ? "" : dish.precoMeia.ToString("F2");
@@ -95,9 +117,6 @@ public class TVDishManager : MonoBehaviourPunCallbacks
             halfPriceText.color = novidadeColor;
             fullPriceText.color = novidadeColor;
         }
-
-        Transform parentLayout = GetParentLayout(dish.categoria);
-        newDishUI.transform.SetParent(parentLayout, false);
     }
 
     private Transform GetParentLayout(string categoria)

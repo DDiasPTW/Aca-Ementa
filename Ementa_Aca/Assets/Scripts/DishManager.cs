@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
+using System;
 
 public class DishManager : MonoBehaviourPunCallbacks
 {
@@ -65,18 +66,27 @@ public class DishManager : MonoBehaviourPunCallbacks
         // Check if the dish name is empty
         if (string.IsNullOrWhiteSpace(dishNameInput.text))
         {
-            Debug.LogError("Dish name cannot be empty!");
             return;
         }
 
         // Try to parse the half dose price
-        float.TryParse(halfDosePriceInput.text, out float halfDosePrice);
-
+        //float.TryParse(halfDosePriceInput.text, out float halfDosePrice);
+        if (float.TryParse(halfDosePriceInput.text, out float halfDosePrice))
+        {
+            halfDosePrice = (float)Math.Round(halfDosePrice, 2); // Round to 2 decimal places
+        }
         // Try to parse the full dose price
-        float.TryParse(fullDosePriceInput.text, out float fullDosePrice);
+        //float.TryParse(fullDosePriceInput.text, out float fullDosePrice);
+        if (float.TryParse(fullDosePriceInput.text, out float fullDosePrice))
+        {
+            fullDosePrice = (float)Math.Round(fullDosePrice, 2); // Round to 2 decimal places
+        }
+
+
 
         Dish newDish = new Dish
         {
+        id = Guid.NewGuid().ToString(),
         nome = dishNameInput.text,
         categoria = categoryDropdown.options[categoryDropdown.value].text,
         precoMeia = halfDosePrice,
@@ -114,20 +124,8 @@ public class DishManager : MonoBehaviourPunCallbacks
         SerializableDishList loadedDishes = JsonUtility.FromJson<SerializableDishList>(json);
         dishes = loadedDishes.dishes;
 
-        // Clear the old UI elements
-        foreach (var dishUI in dishUIObjects)
-        {
-            Destroy(dishUI);
-        }
-        dishUIObjects.Clear();
-
-        // Instantiate the UI elements for the updated dishes
-        foreach (Dish dish in dishes)
-        {
-            InstantiateDishUI(dish);
-        }
+        RefreshDishUI();
     }
-
     public void LoadDishesFromFile()
     {
         string path = Application.persistentDataPath + "/Pratos.txt";
@@ -137,6 +135,14 @@ public class DishManager : MonoBehaviourPunCallbacks
             string json = File.ReadAllText(path);
             SerializableDishList loadedDishes = JsonUtility.FromJson<SerializableDishList>(json);
             dishes = loadedDishes.dishes;
+
+            foreach (Dish dish in dishes)
+            {
+                if (string.IsNullOrEmpty(dish.id))
+                {
+                    dish.id = Guid.NewGuid().ToString(); // Assign a new unique ID
+                }
+            }
 
             // Clear the old UI elements
             foreach (var dishUI in dishUIObjects)
@@ -158,7 +164,7 @@ public class DishManager : MonoBehaviourPunCallbacks
         // Create new dish instance in the UI
         GameObject newDishUI = Instantiate(dishPrefab, dishesContainer);
         dishUIObjects.Add(newDishUI);
-
+        newDishUI.name = dish.id;
         // Set properties for the new dish instance
         TMP_InputField nameField = newDishUI.transform.GetChild(1).GetComponent<TMP_InputField>();
         TMP_Dropdown categoryDropdown = newDishUI.transform.GetChild(2).GetComponent<TMP_Dropdown>();
@@ -174,52 +180,25 @@ public class DishManager : MonoBehaviourPunCallbacks
         naHoraToggle.onValueChanged.AddListener((isOn) =>
         {
             dish.naHora = isOn;
-            SaveDishesToFile(); // Save immediately after change
-
-            ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
-            if (server != null)
-            {
-                server.SendActiveDishes();  // Send the updated dish status to all connected clients
-            }
+            SaveDishesToFile(); // Save and update all clients
         });
-
 
         novidadeToggle.onValueChanged.AddListener((isOn) =>
         {
             dish.novidade = isOn;
-            SaveDishesToFile(); // Save immediately after change
-
-            ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
-            if (server != null)
-            {
-                server.SendActiveDishes();  // Send the updated dish status to all connected clients
-            }
+            SaveDishesToFile(); // Save and update all clients
         });
-
 
         soldOutToggle.onValueChanged.AddListener((isOn) =>
         {
             dish.Esgotado = isOn;
-            SaveDishesToFile(); // Save immediately after change
-
-            ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
-            if (server != null)
-            {
-                server.SendActiveDishes();  // Send the updated dish status to all connected clients
-            }
+            SaveDishesToFile(); // Save and update all clients
         });
-
 
         ativoToggle.onValueChanged.AddListener((isOn) =>
         {
             dish.isAtivo = isOn;
-            SaveDishesToFile(); // Save immediately after change
-
-            ServerPhoton server = gameObject.GetComponent<ServerPhoton>();
-            if (server != null)
-            {
-                server.SendActiveDishes();  // Send the updated list of active dishes to all connected clients
-            }
+            SaveDishesToFile(); // Save and update all clients
         });
         #endregion
 
@@ -246,32 +225,22 @@ public class DishManager : MonoBehaviourPunCallbacks
             DeleteDish(newDishUI);
         });
     }
-    public void DeleteDish(GameObject dish)
+    public void DeleteDish(GameObject dishUI)
     {
-        int indexToRemove = dishUIObjects.IndexOf(dish);
+        // Get the dish ID from the UI object
+        string dishId = dishUI.name;
 
-        Toggle naHoraToggle = dish.transform.GetChild(5).GetComponent<Toggle>();
-        Toggle novidadeToggle = dish.transform.GetChild(6).GetComponent<Toggle>();
-        Toggle soldOutToggle = dish.transform.GetChild(7).GetComponent<Toggle>();
-        Toggle ativoToggle = dish.transform.GetChild(8).GetComponent<Toggle>();
-
-        // Remove listeners
-        naHoraToggle.onValueChanged.RemoveAllListeners();
-        novidadeToggle.onValueChanged.RemoveAllListeners();
-        soldOutToggle.onValueChanged.RemoveAllListeners();
-        ativoToggle.onValueChanged.RemoveAllListeners();
-
-        if (indexToRemove >= 0 && indexToRemove < dishes.Count)
+        // Find the dish with this ID
+        var dishToRemove = dishes.FirstOrDefault(d => d.id == dishId);
+        if (dishToRemove != null)
         {
-            dishes.RemoveAt(indexToRemove);
+            dishes.Remove(dishToRemove);
             SaveDishesToFile();
         }
 
-        dishUIObjects.Remove(dish);
-        //Debug.Log("Removing... " + dish.name);
-        Destroy(dish);
+        dishUIObjects.Remove(dishUI);
+        Destroy(dishUI);
     }
-
     #endregion
 
     #region Edit
@@ -304,9 +273,11 @@ public class DishManager : MonoBehaviourPunCallbacks
             GameObject dishUI = dishUIObjects[i];
             Dish updatedDish = GetDishFromUI(dishUI);
 
-            if (i < dishes.Count)
+            // Find and update the dish in the dishes list
+            var dishToUpdate = dishes.FirstOrDefault(d => d.id == updatedDish.id);
+            if (dishToUpdate != null)
             {
-                dishes[i] = updatedDish; // Update the dish in the list
+                dishToUpdate.UpdateDetails(updatedDish);
             }
         }
 
@@ -329,6 +300,7 @@ public class DishManager : MonoBehaviourPunCallbacks
     private Dish GetDishFromUI(GameObject dishUI)
     {
         // Extract dish information from the UI elements and return a new Dish object
+        string dishID = dishUI.name;
         TMP_InputField nameField = dishUI.transform.GetChild(1).GetComponent<TMP_InputField>();
         TMP_Dropdown categoryDropdown = dishUI.transform.GetChild(2).GetComponent<TMP_Dropdown>();
         TMP_InputField halfDoseField = dishUI.transform.GetChild(3).GetComponent<TMP_InputField>();
@@ -340,6 +312,7 @@ public class DishManager : MonoBehaviourPunCallbacks
 
         return new Dish
         {
+            id = dishID,
             nome = nameField.text,
             categoria = categoryDropdown.options[categoryDropdown.value].text,
             precoMeia = float.Parse(halfDoseField.text),
@@ -402,26 +375,6 @@ public class DishManager : MonoBehaviourPunCallbacks
         // Refresh the UI to reflect the sorted order
         RefreshDishUI();
     }
-    //public void SearchDishes()
-    //{
-    //    string query = searchInputField.text.ToLower().Trim(); // Get the search query and convert to lowercase
-    //    currentSearchQuery = searchInputField.text.ToLower().Trim();
-    //    // Filter the dishes based on the search query
-    //    List<Dish> filteredDishes = dishes.Where(dish => dish.nome.ToLower().Contains(query)).ToList();
-
-    //    // Clear the current UI objects
-    //    foreach (var dishUI in dishUIObjects)
-    //    {
-    //        Destroy(dishUI);
-    //    }
-    //    dishUIObjects.Clear();
-
-    //    // Display only the filtered dishes
-    //    foreach (var dish in filteredDishes)
-    //    {
-    //        InstantiateDishUI(dish);
-    //    }
-    //}
 
     public void SearchDishes()
     {
@@ -449,8 +402,8 @@ public class DishManager : MonoBehaviourPunCallbacks
     }
     private IEnumerator DelayedSearch()
     {
-        // Wait for 0.5 seconds
-        yield return new WaitForSeconds(0.5f);
+        // Wait for 0.3 seconds
+        yield return new WaitForSeconds(0.3f);
 
         // Execute the search
         SearchDishes();
@@ -464,12 +417,13 @@ public class DishManager : MonoBehaviourPunCallbacks
         }
         dishUIObjects.Clear();
 
-        // Re-instantiate the UI objects based on the sorted dishes list
+        // Re-instantiate the UI objects based on the dishes list
         foreach (var dish in dishes)
         {
             InstantiateDishUI(dish);
         }
     }
+
 
     private void RefreshDishUI(List<Dish> filteredDishes)
     {
@@ -494,6 +448,7 @@ public class DishManager : MonoBehaviourPunCallbacks
 [System.Serializable]
 public class Dish
 {
+    public string id; // Unique identifier for each dish
     public string nome;
     public string categoria;
     public float precoMeia;
@@ -502,7 +457,27 @@ public class Dish
     public bool isAtivo;
     public bool novidade = false;
     public bool naHora = false;
+
+    // Constructor to initialize a new dish with a unique ID
+    public Dish()
+    {
+        id = Guid.NewGuid().ToString(); // Generates a unique ID
+    }
+
+    // Method to update dish details
+    public void UpdateDetails(Dish updatedDish)
+    {
+        nome = updatedDish.nome;
+        categoria = updatedDish.categoria;
+        precoMeia = updatedDish.precoMeia;
+        precoDose = updatedDish.precoDose;
+        Esgotado = updatedDish.Esgotado;
+        isAtivo = updatedDish.isAtivo;
+        novidade = updatedDish.novidade;
+        naHora = updatedDish.naHora;
+    }
 }
+
 
 [System.Serializable]
 public class SerializableList<T>

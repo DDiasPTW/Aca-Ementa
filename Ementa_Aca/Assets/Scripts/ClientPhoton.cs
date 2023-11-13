@@ -21,8 +21,13 @@ public class ClientPhoton : MonoBehaviourPunCallbacks
     public override void OnConnectedToMaster()
     {
         Debug.Log("Connected to Master");
-        PhotonNetwork.JoinRoom("MainRoom");
-        //PhotonNetwork.JoinRoom("TESTRoom");
+#if UNITY_EDITOR
+        PhotonNetwork.JoinRoom("TESTRoom");
+        Debug.Log("joined TESTRoom");
+#else
+        PhotonNetwork.JoinRoom("TESTRoom"); //!TEM QUE SE MUDAR
+        Debug.Log("joined TESTRoom");
+#endif
     }
 
     private void TryJoiningRoom()
@@ -30,15 +35,24 @@ public class ClientPhoton : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.IsConnected)
             return;
 
-        PhotonNetwork.JoinRoom("MainRoom");
-        //PhotonNetwork.JoinRoom("TESTRoom");
+#if UNITY_EDITOR
+        PhotonNetwork.JoinRoom("TESTRoom");
+        Debug.Log("trying to join TESTRoom");
+#else
+        PhotonNetwork.JoinRoom("TESTRoom");
+        Debug.Log("trying to join MainRoom");
+#endif
         isTryingToConnect = true;
         currentAttempt++;
     }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log("Joined room: " + "MainRoom");
+#if UNITY_EDITOR
+        Debug.Log("Joined TESTRoom");
+#else
+        Debug.Log("Joined MainRoom");
+#endif
         isTryingToConnect = false;
         currentAttempt = 0;
     }

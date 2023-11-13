@@ -2,25 +2,32 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
+using System.Collections;
 
 public class ServerPhoton : MonoBehaviourPunCallbacks
 {
-    private List<Player> clients = new List<Player>();
     private string dataPath;
 
     void Start()
     {
         dataPath = Application.persistentDataPath + "/Pratos.txt";
         PhotonNetwork.ConnectUsingSettings();
+        StartCoroutine(LogPhotonStats());
     }
 
     public override void OnConnectedToMaster()
     {
         Debug.Log("Connected to Master");
         RoomOptions roomOptions = new RoomOptions();
-        roomOptions.MaxPlayers = 20;
-        PhotonNetwork.JoinOrCreateRoom("MainRoom", roomOptions, TypedLobby.Default);
-        //PhotonNetwork.JoinOrCreateRoom("TESTRoom", roomOptions, TypedLobby.Default);
+        roomOptions.MaxPlayers = 10;
+#if UNITY_EDITOR
+        PhotonNetwork.JoinOrCreateRoom("TESTRoom", roomOptions, TypedLobby.Default);
+        Debug.Log("Created TESTRoom");
+#else
+        //PhotonNetwork.JoinOrCreateRoom("MainRoom", roomOptions, TypedLobby.Default);
+        PhotonNetwork.JoinOrCreateRoom("TESTRoom", roomOptions, TypedLobby.Default);
+        Debug.Log("Created TESTRoom");
+#endif
     }
 
     public override void OnJoinedRoom()
@@ -31,21 +38,38 @@ public class ServerPhoton : MonoBehaviourPunCallbacks
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         Debug.Log("New player joined: " + newPlayer.NickName);
-        clients.Add(newPlayer);
+        SendActiveDishesToPlayer(newPlayer);
+    }
 
-        // Load dishes from file
-        List<Dish> dishes = LoadDishesFromFile();
-
-        // Filter out active dishes
-        List<Dish> activeDishes = dishes.FindAll(dish => dish.isAtivo);
+    private void SendActiveDishesToPlayer(Player player)
+    {
+        List<Dish> activeDishes = LoadActiveDishes();
 
         // Serialize the list of active dishes to JSON
         SerializableDishList serializableDishList = new SerializableDishList { dishes = activeDishes };
         string json = JsonUtility.ToJson(serializableDishList);
 
-        // Send the JSON string to the new player
-        photonView.RPC("UpdateDishes", newPlayer, json);
+        // Send the JSON string to the specified player
+        photonView.RPC("UpdateDishes", player, json);
     }
+    public void UpdateDishes()
+    {
+        List<Dish> activeDishes = LoadActiveDishes();
+
+        // Serialize the list of active dishes to JSON
+        SerializableDishList serializableDishList = new SerializableDishList { dishes = activeDishes };
+        string json = JsonUtility.ToJson(serializableDishList);
+
+        // Send the JSON string to all connected clients
+        photonView.RPC("UpdateDishes", RpcTarget.Others, json);
+    }
+
+    private List<Dish> LoadActiveDishes()
+    {
+        List<Dish> dishes = LoadDishesFromFile();
+        return dishes.FindAll(dish => dish.isAtivo);
+    }
+
 
     private List<Dish> LoadDishesFromFile()
     {
@@ -58,23 +82,15 @@ public class ServerPhoton : MonoBehaviourPunCallbacks
         return new List<Dish>();
     }
 
-    public void SendActiveDishes()
+    IEnumerator LogPhotonStats()
     {
-        Debug.Log("SendActiveDishes called");
-        // Load dishes from file
-        List<Dish> dishes = LoadDishesFromFile();
-
-        // Filter out active dishes
-        List<Dish> activeDishes = dishes.FindAll(dish => dish.isAtivo);
-
-        // Serialize the list of active dishes to JSON
-        SerializableDishList serializableDishList = new SerializableDishList { dishes = activeDishes };
-        string json = JsonUtility.ToJson(serializableDishList);
-
-        Debug.Log("Sending data: " + json);
-        // Send the JSON string to all connected clients
-        photonView.RPC("UpdateDishes", RpcTarget.Others, json);
+        while (true)
+        {
+            Debug.Log(PhotonNetwork.NetworkStatisticsToString());
+            yield return new WaitForSeconds(5); // Log every 5 seconds
+        }
     }
+
 
     [PunRPC]
     public void UpdateDishes(string json)
