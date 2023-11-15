@@ -78,7 +78,7 @@ public class TVDishManager : MonoBehaviourPunCallbacks
         TMP_Text nameText = newDishUI.transform.GetChild(1).GetComponent<TMP_Text>();
         TMP_Text halfPriceText = newDishUI.transform.GetChild(2).GetComponent<TMP_Text>();
         TMP_Text fullPriceText = newDishUI.transform.GetChild(3).GetComponent<TMP_Text>();
-        Image naHoraImage = newDishUI.transform.GetChild(4).GetComponent<Image>(); 
+        GameObject naHoraImage = newDishUI.transform.GetChild(4).gameObject; 
 
         Transform parentLayout = GetParentLayout(dish.categoria);
 
@@ -100,7 +100,7 @@ public class TVDishManager : MonoBehaviourPunCallbacks
         nameText.text = dish.nome.ToUpper();
         halfPriceText.text = dish.precoMeia == 0 ? "" : dish.precoMeia.ToString("F2");
         fullPriceText.text = dish.precoDose == 0 ? "" : dish.precoDose.ToString("F2");
-        naHoraImage.enabled = dish.naHora;
+        naHoraImage.active = dish.naHora;
 
         if (dish.Esgotado)
         {

@@ -43,6 +43,7 @@ public class DishManager : MonoBehaviourPunCallbacks
         dataPath = Application.persistentDataPath + "/Pratos.txt";
         LoadDishesFromFile();
         createButton.onClick.AddListener(CreateDish);
+        isInEditMode = false;
         //editing and saving
         editButton.onClick.AddListener(ToggleEditMode);
         saveButton.onClick.AddListener(SaveChanges);
@@ -469,8 +470,8 @@ public class Dish
     {
         nome = updatedDish.nome;
         categoria = updatedDish.categoria;
-        precoMeia = updatedDish.precoMeia;
-        precoDose = updatedDish.precoDose;
+        precoMeia = (float)Math.Round(updatedDish.precoMeia,2);
+        precoDose = (float)Math.Round(updatedDish.precoDose,2);
         Esgotado = updatedDish.Esgotado;
         isAtivo = updatedDish.isAtivo;
         novidade = updatedDish.novidade;

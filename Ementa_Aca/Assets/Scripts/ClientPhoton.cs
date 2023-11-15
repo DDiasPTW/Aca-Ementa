@@ -25,8 +25,8 @@ public class ClientPhoton : MonoBehaviourPunCallbacks
         PhotonNetwork.JoinRoom("TESTRoom");
         Debug.Log("joined TESTRoom");
 #else
-        PhotonNetwork.JoinRoom("TESTRoom"); //!TEM QUE SE MUDAR
-        Debug.Log("joined TESTRoom");
+        PhotonNetwork.JoinRoom("MainRoom");
+        Debug.Log("joined MainRoom");
 #endif
     }
 
@@ -39,7 +39,7 @@ public class ClientPhoton : MonoBehaviourPunCallbacks
         PhotonNetwork.JoinRoom("TESTRoom");
         Debug.Log("trying to join TESTRoom");
 #else
-        PhotonNetwork.JoinRoom("TESTRoom");
+        PhotonNetwork.JoinRoom("MainRoom");
         Debug.Log("trying to join MainRoom");
 #endif
         isTryingToConnect = true;

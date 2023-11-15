@@ -12,21 +12,20 @@ public class ServerPhoton : MonoBehaviourPunCallbacks
     {
         dataPath = Application.persistentDataPath + "/Pratos.txt";
         PhotonNetwork.ConnectUsingSettings();
-        StartCoroutine(LogPhotonStats());
+        //StartCoroutine(LogPhotonStats());
     }
 
     public override void OnConnectedToMaster()
     {
         Debug.Log("Connected to Master");
         RoomOptions roomOptions = new RoomOptions();
-        roomOptions.MaxPlayers = 10;
+        roomOptions.MaxPlayers = 5;
 #if UNITY_EDITOR
         PhotonNetwork.JoinOrCreateRoom("TESTRoom", roomOptions, TypedLobby.Default);
         Debug.Log("Created TESTRoom");
 #else
-        //PhotonNetwork.JoinOrCreateRoom("MainRoom", roomOptions, TypedLobby.Default);
-        PhotonNetwork.JoinOrCreateRoom("TESTRoom", roomOptions, TypedLobby.Default);
-        Debug.Log("Created TESTRoom");
+        PhotonNetwork.JoinOrCreateRoom("MainRoom", roomOptions, TypedLobby.Default);
+        Debug.Log("Created MainRoom");
 #endif
     }
 
@@ -37,7 +36,7 @@ public class ServerPhoton : MonoBehaviourPunCallbacks
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
-        Debug.Log("New player joined: " + newPlayer.NickName);
+        Debug.Log("New user joined: " + newPlayer.NickName);
         SendActiveDishesToPlayer(newPlayer);
     }
 
@@ -87,7 +86,7 @@ public class ServerPhoton : MonoBehaviourPunCallbacks
         while (true)
         {
             Debug.Log(PhotonNetwork.NetworkStatisticsToString());
-            yield return new WaitForSeconds(5); // Log every 5 seconds
+            yield return new WaitForSeconds(2); // Log every 2 seconds
         }
     }
 
