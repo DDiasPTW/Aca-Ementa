@@ -8,11 +8,14 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SetupScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/TVScene.unity
     guid: 456025076b7f3e24b84566541b2cfe18
   - enabled: 0
     path: Assets/Scenes/TVScene_Escuro.unity
     guid: a49112ca11e17594f840589425084d52
+  - enabled: 0
+    path: Assets/Scenes/TVScene_Intermedio.unity
+    guid: c257071e4ab00b54793cfad7f44a6a7f
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

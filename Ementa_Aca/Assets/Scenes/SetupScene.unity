@@ -1892,7 +1892,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -245.5, y: -0}
+  m_AnchoredPosition: {x: -245.5, y: 0}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &898115308
@@ -3197,8 +3197,8 @@ Canvas:
   m_GameObject: {fileID: 1280483876}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 0
-  m_Camera: {fileID: 0}
+  m_RenderMode: 1
+  m_Camera: {fileID: 519420031}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
@@ -5102,10 +5102,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1940067629}
-  - component: {fileID: 1940067630}
+  - component: {fileID: 1940067635}
   - component: {fileID: 1940067632}
-  - component: {fileID: 1940067634}
   - component: {fileID: 1940067633}
+  - component: {fileID: 1940067636}
+  - component: {fileID: 1940067637}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -5128,31 +5129,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1940067630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1940067628}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3f956655fc9d90439f63ee37082e1d9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  addDishPanel: {fileID: 2112474893}
-  dishNameInput: {fileID: 1724956586}
-  halfDosePriceInput: {fileID: 1900606609}
-  fullDosePriceInput: {fileID: 1960422027}
-  categoryDropdown: {fileID: 1171059006}
-  dishPrefab: {fileID: 6704007171895060806, guid: eb1a800ee4cef4e4b80447c733ad2aec, type: 3}
-  dishesContainer: {fileID: 1202760891}
-  createButton: {fileID: 989428201}
-  editButton: {fileID: 141197741}
-  saveButton: {fileID: 889296306}
-  activeTitleButton: {fileID: 1274979730}
-  nameButton: {fileID: 1095701520}
-  searchInputField: {fileID: 572392862}
 --- !u!114 &1940067632
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5189,7 +5165,44 @@ MonoBehaviour:
   sceneViewId: 1
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!114 &1940067634
+--- !u!114 &1940067635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1940067628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 150f08885cda347079956d62bdd1ba65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  addDishPanel: {fileID: 0}
+  dishNameInput: {fileID: 1724956586}
+  halfDosePriceInput: {fileID: 1900606609}
+  fullDosePriceInput: {fileID: 1960422027}
+  categoryDropdown: {fileID: 1171059006}
+  dishPrefab: {fileID: 6704007171895060806, guid: eb1a800ee4cef4e4b80447c733ad2aec, type: 3}
+  dishesContainer: {fileID: 1202760891}
+  createButton: {fileID: 989428201}
+  editButton: {fileID: 141197741}
+  saveButton: {fileID: 889296306}
+  activeTitleButton: {fileID: 1274979730}
+  nameButton: {fileID: 1095701520}
+  searchInputField: {fileID: 572392862}
+--- !u!114 &1940067636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1940067628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 874a175d5ea744f6e92c60df3904a43a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1940067637
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

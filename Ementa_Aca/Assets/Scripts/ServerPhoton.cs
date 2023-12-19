@@ -20,13 +20,10 @@ public class ServerPhoton : MonoBehaviourPunCallbacks
         Debug.Log("Connected to Master");
         RoomOptions roomOptions = new RoomOptions();
         roomOptions.MaxPlayers = 5;
-#if UNITY_EDITOR
-        PhotonNetwork.JoinOrCreateRoom("TESTRoom", roomOptions, TypedLobby.Default);
-        Debug.Log("Created TESTRoom");
-#else
-        PhotonNetwork.JoinOrCreateRoom("MainRoom", roomOptions, TypedLobby.Default);
-        Debug.Log("Created MainRoom");
-#endif
+
+        //PhotonNetwork.JoinOrCreateRoom("MainRoom", roomOptions, TypedLobby.Default);
+        PhotonNetwork.JoinOrCreateRoom("MAINRoom", roomOptions, TypedLobby.Default);
+        Debug.Log("Created MAINRoomRoom");
     }
 
     public override void OnJoinedRoom()

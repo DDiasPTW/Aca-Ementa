@@ -21,13 +21,9 @@ public class ClientPhoton : MonoBehaviourPunCallbacks
     public override void OnConnectedToMaster()
     {
         Debug.Log("Connected to Master");
-#if UNITY_EDITOR
-        PhotonNetwork.JoinRoom("TESTRoom");
-        Debug.Log("joined TESTRoom");
-#else
+
         PhotonNetwork.JoinRoom("MainRoom");
         Debug.Log("joined MainRoom");
-#endif
     }
 
     private void TryJoiningRoom()
