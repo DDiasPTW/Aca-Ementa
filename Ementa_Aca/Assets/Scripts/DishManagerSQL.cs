@@ -1,13 +1,13 @@
 using System.Collections;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
-using System;
-using System.IO;
 using SQLite;
+using System;
+using System.Linq;
+using System.IO;
 
 public class DishManagerSQL : MonoBehaviourPunCallbacks
 {
@@ -21,6 +21,7 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
     public Transform dishesContainer;
     private List<GameObject> dishUIObjects = new List<GameObject>();
     public Button createButton;
+
     [Header("Editing References")]
     public Button editButton;
     public Button saveButton;
@@ -28,39 +29,33 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
     private List<Dishe> dishes = new List<Dishe>();
 
     [Header("Other")]
-    //ordering
     public Button activeTitleButton;
     public Button nameButton;
-    //searching
     public TMP_InputField searchInputField;
-    private Coroutine searchCoroutine; //add some delay
+    private Coroutine searchCoroutine;
     private string currentSearchQuery = "";
     private bool isSortByActiveStatusAscending = true;
     private bool isSortByAlphaAscending = false;
 
-
     [Header("SQL")]
     private SQLiteConnection dbConnection;
-
+    private ServerPhotonSQL svPhoton;
 
     void Start()
     {
+        svPhoton = GetComponent<ServerPhotonSQL>();
         Debug.Log(Application.persistentDataPath);
         InitializeDatabase();
         LoadDishesFromDatabase();
 
         createButton.onClick.AddListener(CreateDish);
         isInEditMode = false;
-        //editing and saving
         editButton.onClick.AddListener(ToggleEditMode);
         saveButton.onClick.AddListener(SaveChanges);
         saveButton.gameObject.SetActive(false);
-        //reordering
         activeTitleButton.onClick.AddListener(SortByActiveStatus);
         nameButton.onClick.AddListener(SortByAlpha);
-        //searching
         searchInputField.onValueChanged.AddListener(delegate { StartDelayedSearch(); });
-
     }
 
     void OnApplicationQuit()
@@ -76,7 +71,6 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
     {
         string databasePath = Path.Combine(Application.persistentDataPath, "dishes.db");
         dbConnection = new SQLiteConnection(databasePath);
-
         dbConnection.CreateTable<Dishe>();
     }
 
@@ -88,7 +82,7 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
             InstantiateDishUI(dish);
         }
     }
-    // New methods for database operations
+
     void SaveDishToDatabase(Dishe dish)
     {
         dbConnection.InsertOrReplace(dish);
@@ -106,7 +100,6 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
             return;
         }
 
-        // Use 0 as default value if the input is invalid or empty
         float.TryParse(halfDosePriceInput.text, out float halfDosePrice);
         float.TryParse(fullDosePriceInput.text, out float fullDosePrice);
 
@@ -124,11 +117,11 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         };
 
         SaveDishToDatabase(newDish);
+        svPhoton.SendUpdatedDishesToAllClients();
         InstantiateDishUI(newDish);
-
         ClearInputFields();
+        SendUpdatedDishesToServer();
     }
-
 
     private void ClearInputFields()
     {
@@ -142,8 +135,6 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
     {
         isInEditMode = !isInEditMode;
         saveButton.gameObject.SetActive(isInEditMode);
-
-        // Enable/Disable input fields based on edit mode
         ToggleInputFields(isInEditMode);
     }
 
@@ -156,20 +147,30 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         {
             Dishe updatedDish = GetDishFromUI(dishUI);
             SaveDishToDatabase(updatedDish);
+            svPhoton.SendUpdatedDishesToAllClients();
         }
 
-        searchInputField.text = ""; // Clear search field
-        LoadDishesFromDatabase(); // Reload all dishes from the database
-        RefreshDishUI(); // Refresh the UI
+        searchInputField.text = "";
+        LoadDishesFromDatabase();
+        RefreshDishUI();
+        SendUpdatedDishesToServer();
+    }
+
+    private void SendUpdatedDishesToServer()
+    {
+        var allDishes = dbConnection.Table<Dishe>().ToList();
+        string json = JsonUtility.ToJson(new SerializableDishList { dishes = allDishes });
+        photonView.RPC("ReceiveUpdatedDishes", RpcTarget.Others, json);
     }
 
     public void DeleteDish(GameObject dishUI)
     {
         string dishId = dishUI.name;
         DeleteDishFromDatabase(dishId);
-
         dishUIObjects.Remove(dishUI);
         Destroy(dishUI);
+        SendUpdatedDishesToServer();
+        svPhoton.SendUpdatedDishesToAllClients();
     }
 
     private void ToggleInputFields(bool enable)
@@ -220,7 +221,6 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         dishUIObjects.Add(newDishUI);
         newDishUI.name = dish.id;
 
-        // Set properties for the new dish instance
         TMP_InputField nameField = newDishUI.transform.GetChild(1).GetComponent<TMP_InputField>();
         TMP_Dropdown categoryDropdown = newDishUI.transform.GetChild(2).GetComponent<TMP_Dropdown>();
         TMP_InputField halfDoseField = newDishUI.transform.GetChild(3).GetComponent<TMP_InputField>();
@@ -231,7 +231,6 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         Toggle ativoToggle = newDishUI.transform.GetChild(8).GetComponent<Toggle>();
         Button deleteButton = newDishUI.transform.GetChild(9).GetComponent<Button>();
 
-        // Set the UI elements with dish data
         nameField.text = dish.nome;
         categoryDropdown.value = categoryDropdown.options.FindIndex(option => option.text == dish.categoria);
         halfDoseField.text = dish.precoMeia.ToString();
@@ -240,14 +239,12 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         novidadeToggle.isOn = dish.novidade;
         soldOutToggle.isOn = dish.Esgotado;
         ativoToggle.isOn = dish.isAtivo;
-         
-        // Disable input for the created dish details
+
         nameField.interactable = false;
         categoryDropdown.interactable = false;
         halfDoseField.interactable = false;
         fullDoseField.interactable = false;
 
-        // Add listeners for toggles and delete button
         naHoraToggle.onValueChanged.AddListener(isOn => { UpdateDishInDatabase(dish, "naHora", isOn); });
         novidadeToggle.onValueChanged.AddListener(isOn => { UpdateDishInDatabase(dish, "novidade", isOn); });
         soldOutToggle.onValueChanged.AddListener(isOn => { UpdateDishInDatabase(dish, "Esgotado", isOn); });
@@ -257,11 +254,9 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
 
     private void UpdateDishInDatabase(Dishe dish, string property, bool value)
     {
-        // Fetch the dish from the database
         Dishe dishToUpdate = dbConnection.Table<Dishe>().FirstOrDefault(d => d.id == dish.id);
         if (dishToUpdate != null)
         {
-            // Update the specified property
             switch (property)
             {
                 case "naHora":
@@ -278,24 +273,20 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
                     break;
             }
 
-            // Save the updated dish back to the database
             dbConnection.Update(dishToUpdate);
             RefreshDishUI();
         }
+        svPhoton.SendUpdatedDishesToAllClients();
     }
-
 
     public void SortByActiveStatus()
     {
-        if (isSortByActiveStatusAscending)
-            dishes.Sort((a, b) => a.isAtivo.CompareTo(b.isAtivo));
-        else
-            dishes.Sort((a, b) => b.isAtivo.CompareTo(a.isAtivo));
-
+        // Sort dishes based on active status but include all dishes
+        dishes.Sort((a, b) => isSortByActiveStatusAscending ? a.isAtivo.CompareTo(b.isAtivo) : b.isAtivo.CompareTo(a.isAtivo));
         isSortByActiveStatusAscending = !isSortByActiveStatusAscending; // Toggle the sort order
-        RefreshDishUI(dishes);
-    }
 
+        RefreshDishUI(dishes); // Refresh the UI with the sorted list
+    }
 
     public void SortByAlpha()
     {
@@ -307,8 +298,6 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         isSortByAlphaAscending = !isSortByAlphaAscending; // Toggle the sort order
         RefreshDishUI(dishes);
     }
-
-
 
     private void RefreshDishUI()
     {
@@ -323,13 +312,28 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         LoadDishesFromDatabase(); // This will repopulate 'dishes' list and UI
     }
 
+    private void RefreshDishUI(List<Dishe> updatedDishes = null)
+    {
+        // Clear the current UI objects
+        foreach (var dishUI in dishUIObjects)
+        {
+            Destroy(dishUI);
+        }
+        dishUIObjects.Clear();
+
+        // Reload dishes from the database if updatedDishes is null
+        var dishesToShow = updatedDishes ?? dbConnection.Table<Dishe>().ToList();
+        foreach (var dish in dishesToShow)
+        {
+            InstantiateDishUI(dish);
+        }
+    }
 
     private IEnumerator DelayedSearch()
     {
         yield return new WaitForSeconds(0.3f); // Delay before search
         SearchDishes();
     }
-
 
     private void StartDelayedSearch()
     {
@@ -339,7 +343,6 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         }
         searchCoroutine = StartCoroutine(DelayedSearch());
     }
-
 
     private void SearchDishes()
     {
@@ -351,21 +354,11 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         RefreshDishUI(filteredDishes);
     }
 
-    private void RefreshDishUI(List<Dishe> sortedDishes = null)
+    [System.Serializable]
+    public class SerializableDishList
     {
-        foreach (var dishUI in dishUIObjects)
-        {
-            Destroy(dishUI);
-        }
-        dishUIObjects.Clear();
-
-        var dishesToShow = sortedDishes ?? dishes; // Use sorted list if provided
-        foreach (var dish in dishesToShow)
-        {
-            InstantiateDishUI(dish);
-        }
+        public List<Dishe> dishes;
     }
-
 }
 
 [Table("dishes")]

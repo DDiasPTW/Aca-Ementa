@@ -3,6 +3,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Collections;
+using System.Text;
 
 public class ServerPhoton : MonoBehaviourPunCallbacks
 {
