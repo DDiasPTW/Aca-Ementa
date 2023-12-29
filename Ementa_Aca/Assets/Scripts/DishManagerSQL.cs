@@ -47,7 +47,7 @@ public class DishManagerSQL : MonoBehaviourPunCallbacks
         Debug.Log(Application.persistentDataPath);
         InitializeDatabase();
         LoadDishesFromDatabase();
-
+        
         createButton.onClick.AddListener(CreateDish);
         isInEditMode = false;
         editButton.onClick.AddListener(ToggleEditMode);
@@ -375,4 +375,3 @@ public class Dishe
     public bool novidade { get; set; }
     public bool naHora { get; set; }
 }
-
